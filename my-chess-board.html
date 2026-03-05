@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Chess Study Board</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Lato:wght@300;400;700&display=swap');
+:root{
+  --light:#f0d9b5;--dark:#b58863;--sel:#7fc97f;--last:rgba(155,199,0,.42);--hint:rgba(0,0,0,.18);
+  --bg:#12111a;--panel:#1c1b28;--card:#222130;--border:#2e2d42;--accent:#e94560;--teal:#00c9b1;
+  --text:#ede9e0;--muted:#7c7a8e;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;align-items:center;min-height:100vh}
+header{width:100%;background:var(--panel);border-bottom:1px solid var(--border);
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;flex-shrink:0}
+header h1{font-family:'Playfair Display',serif;font-size:clamp(1rem,4vw,1.35rem)}
+header h1 em{font-style:normal;color:var(--accent)}
+.badges{display:flex;gap:6px}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;
+  padding:3px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.04em}
+.b-sf{background:var(--teal);color:#000}.b-ai{background:var(--accent);color:#fff}
+.app{display:flex;gap:18px;padding:14px;width:100%;max-width:1080px;align-items:flex-start;justify-content:center;flex:1}
+.board-col{display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0}
+.board-wrap{border:2px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#board{display:grid;grid-template-columns:repeat(8,var(--sq,70px));grid-template-rows:repeat(8,var(--sq,70px));
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
+.sq{width:var(--sq,70px);height:var(--sq,70px);display:flex;align-items:center;justify-content:center;
+  position:relative;font-size:calc(var(--sq,70px)*.72);line-height:1}
+.sq.light{background:var(--light)}.sq.dark{background:var(--dark)}
+.sq.sel{background:var(--sel)!important}.sq.last{background:var(--last)!important}
+.sq.hint::after{content:'';position:absolute;width:30%;height:30%;background:var(--hint);border-radius:50%;pointer-events:none}
+.sq.hintcap::after{content:'';position:absolute;inset:0;border:4px solid rgba(0,0,0,.22);pointer-events:none}
+.coord{position:absolute;font-size:calc(var(--sq,70px)*.14);font-family:'JetBrains Mono',monospace;
+  font-weight:600;opacity:.65;pointer-events:none;z-index:1}
+.coord.rank{top:2px;left:3px}.coord.file{bottom:2px;right:3px}
+.piece{pointer-events:none;display:block}
+.controls{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%}
+.btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 14px;
+  border-radius:8px;cursor:pointer;font-family:'Lato',sans-serif;font-size:clamp(.7rem,2.6vw,.82rem);
+  font-weight:700;letter-spacing:.03em;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  transition:opacity .12s,transform .1s;white-space:nowrap}
+.btn:active{opacity:.65;transform:scale(.94)}
+.btn.red{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.teal{background:var(--teal);border-color:var(--teal);color:#000}
+#status{width:100%;padding:8px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:8px;text-align:center;font-weight:700;font-size:clamp(.76rem,2.8vw,.88rem);
+  letter-spacing:.02em;transition:all .2s}
+#status.thinking{border-color:var(--teal);background:rgba(0,201,177,.08)}
+#status.check{border-color:#ff9800;background:rgba(255,152,0,.1)}
+#status.over{border-color:#ffd700;background:rgba(255,215,0,.1)}
+.panel{flex:1;display:flex;flex-direction:column;gap:12px;min-width:256px;max-width:300px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card h3{font-family:'Playfair Display',serif;font-size:.9rem;margin-bottom:10px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.eval-wrap{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.eval-bar{flex:1;height:10px;background:#2a2939;border-radius:5px;overflow:hidden;position:relative}
+.eval-fill{position:absolute;left:0;top:0;bottom:0;background:#fff;transition:width .5s ease;border-radius:5px}
+.eval-score{font-family:'JetBrains Mono',monospace;font-size:.84rem;font-weight:600;min-width:48px;text-align:right}
+.lines{display:flex;flex-direction:column;gap:5px}
+.line{background:rgba(0,201,177,.07);border:1px solid rgba(0,201,177,.18);border-radius:6px;padding:7px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:.73rem;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .12s}
+.line:active{background:rgba(0,201,177,.25)}
+.line .ev{color:var(--teal);font-weight:600;margin-bottom:2px;font-size:.71rem}
+.line .mv{word-break:break-all;line-height:1.5}
+.coaching-text{font-size:.81rem;line-height:1.7;color:#ccc;font-style:italic;min-height:60px}
+.movelist{max-height:140px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.74rem;
+  display:flex;flex-wrap:wrap;gap:2px 4px;align-content:flex-start}
+.mn{color:var(--muted);margin-right:1px}
+.mv-e{padding:1px 4px;border-radius:3px}
+.mv-e.cur{background:rgba(0,201,177,.2);color:var(--teal)}
+.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:.82rem}
+.row:last-child{margin-bottom:0}
+.lbl{color:var(--muted)}
+select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;
+  border-radius:6px;font-family:'Lato',sans-serif;font-size:.78rem;cursor:pointer}
+.dots{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:pulse 1s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.mob-panel{display:none;width:100%;background:var(--panel);border-top:1px solid var(--border);flex-shrink:0}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.04em;
+  -webkit-tap-highlight-color:transparent;transition:all .15s}
+.tab.on{color:var(--teal);border-bottom-color:var(--teal)}
+.tab-body{display:none;padding:11px 13px}
+.tab-body.on{display:block}
+.m-eval-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.m-movelist{max-height:88px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  display:flex;flex-wrap:wrap;gap:2px 4px;align-content:flex-start}
+@media(max-width:720px){
+  .app{flex-direction:column;align-items:center;padding:8px 8px 0;gap:8px}
+  .panel{display:none}.mob-panel{display:block}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>♟ My Chess <em>Study Board</em></h1>
+  <div class="badges">
+    <span class="badge b-sf" id="sfBadge">LOADING…</span>
+    <span class="badge b-ai">AI COACH</span>
+  </div>
+</header>
+
+<div class="app">
+  <div class="board-col">
+    <div class="board-wrap"><div id="board"></div></div>
+    <div class="controls">
+      <button class="btn red"  onclick="newGame()">New Game</button>
+      <button class="btn"      onclick="flipBoard()">⟳ Flip</button>
+      <button class="btn"      onclick="undoMove()">↩ Undo</button>
+      <button class="btn teal" onclick="getCoaching()">💬 Coach Me</button>
+    </div>
+    <div id="status">Loading engine…</div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>⚙ Settings</h3>
+      <div class="row"><span class="lbl">Play as</span>
+        <select id="playSide" onchange="newGame()">
+          <option value="w">White</option><option value="b">Black</option>
+        </select>
+      </div>
+      <div class="row"><span class="lbl">Engine strength</span>
+        <select id="difficulty">
+          <option value="1">Beginner</option><option value="3">Easy</option>
+          <option value="6" selected>Medium</option><option value="10">Hard</option>
+          <option value="20">Maximum</option>
+        </select>
+      </div>
+      <div class="row"><span class="lbl">Auto-coach</span>
+        <select id="autoCoach"><option value="1">On</option><option value="0">Off</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📊 Stockfish <span id="sfstatus"></span></h3>
+      <div class="eval-wrap">
+        <div class="eval-bar"><div class="eval-fill" id="evalFill" style="width:50%"></div></div>
+        <div class="eval-score" id="evalScore">0.00</div>
+      </div>
+      <div class="lines" id="lines"><div style="color:var(--muted);font-size:.78rem;padding:4px">Loading…</div></div>
+    </div>
+    <div class="card">
+      <h3>💬 AI Coach</h3>
+      <div class="coaching-text" id="coaching">Make a move to get coaching!</div>
+    </div>
+    <div class="card">
+      <h3>📋 Moves</h3>
+      <div class="movelist" id="movelist"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mob-panel">
+  <div class="tabs">
+    <div class="tab on"  onclick="mobTab(0)">📊 Engine</div>
+    <div class="tab"     onclick="mobTab(1)">💬 Coach</div>
+    <div class="tab"     onclick="mobTab(2)">⚙ Settings</div>
+    <div class="tab"     onclick="mobTab(3)">📋 Moves</div>
+  </div>
+  <div class="tab-body on" id="mt0">
+    <div class="m-eval-row">
+      <div class="eval-bar" style="flex:1"><div class="eval-fill" id="mEvalFill" style="width:50%"></div></div>
+      <div class="eval-score" id="mEvalScore">0.00</div>
+      <span id="mSfStatus" style="margin-left:4px"></span>
+    </div>
+    <div class="lines" id="mLines"><div style="color:var(--muted);font-size:.78rem">Loading…</div></div>
+  </div>
+  <div class="tab-body" id="mt1">
+    <div class="coaching-text" id="mCoaching" style="font-size:.8rem">Make a move to get coaching!</div>
+  </div>
+  <div class="tab-body" id="mt2">
+    <div class="row"><span class="lbl">Play as</span>
+      <select id="mPlaySide" onchange="newGame()">
+        <option value="w">White</option><option value="b">Black</option>
+      </select>
+    </div>
+    <div class="row"><span class="lbl">Strength</span>
+      <select id="mDifficulty">
+        <option value="1">Beginner</option><option value="3">Easy</option>
+        <option value="6" selected>Medium</option><option value="10">Hard</option>
+        <option value="20">Maximum</option>
+      </select>
+    </div>
+    <div class="row"><span class="lbl">Auto-coach</span>
+      <select id="mAutoCoach"><option value="1">On</option><option value="0">Off</option></select>
+    </div>
+  </div>
+  <div class="tab-body" id="mt3">
+    <div class="m-movelist" id="mMovelist"></div>
+  </div>
+</div>
+
+<!-- chess.js for move validation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<!-- Stockfish SINGLE-THREADED — no Worker needed, runs on main thread -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js"></script>
+
+<script>
+// ── HELPERS ──────────────────────────────────────────────────
+const mob = () => window.innerWidth <= 720;
+const $   = id => document.getElementById(id);
+function getOpt(d,m){ return $(mob()?m:d).value; }
+function syncOpt(d,m,v){ $(d).value=v; $(m).value=v; }
+function getDiff()      { return parseInt(getOpt('difficulty','mDifficulty')); }
+function getAutoCoach() { return getOpt('autoCoach','mAutoCoach')==='1'; }
+function sqSize(){
+  if(mob()){
+    const vw=window.innerWidth-16, vh=window.innerHeight-48-52-38-8-200;
+    return Math.max(Math.floor(Math.min(vw,Math.max(vh,vw*.55))/8),34);
+  }
+  return Math.floor(Math.min(560,window.innerWidth*.5)/8);
+}
+function applySq(){ document.documentElement.style.setProperty('--sq',sqSize()+'px'); }
+
+// ── STATE ────────────────────────────────────────────────────
+let game=new Chess(), selected=null, legalDests=[], lastMove=null;
+let flipped=false, playerSide='w', gameOver=false;
+let sfReady=false, sfBusy=false, sfLines=[];
+let sfMessageHandler=null; // current callback waiting for bestmove
+
+// ── STOCKFISH SETUP ──────────────────────────────────────────
+// stockfish.js exposes a global `Stockfish` factory function when loaded as a
+// plain <script> (not a Worker). This works on file:// in all browsers.
+let SF = null;
+
+function initSF(){
+  try {
+    // The CDN build exposes either window.Stockfish (factory) or directly hooks
+    // into postMessage style via STOCKFISH global
+    if(typeof STOCKFISH === 'function'){
+      SF = STOCKFISH();
+    } else if(typeof Stockfish === 'function'){
+      SF = Stockfish();
+    } else {
+      // Some builds just replace postMessage on self
+      SF = {
+        postMessage: function(msg){ self.postMessage(msg); },
+        onmessage: null
+      };
+      const origPost = self.onmessage;
+      self.onmessage = function(e){ if(SF.onmessage) SF.onmessage({data:e.data}); };
+    }
+
+    SF.onmessage = handleSFMsg;
+    SF.postMessage('uci');
+  } catch(e) {
+    console.error('SF init error', e);
+    onSFLoadFail();
+  }
+}
+
+function onSFLoadFail(){
+  $('sfBadge').textContent = 'SF OFFLINE';
+  $('sfBadge').style.background = '#555';
+  setStatus('⬜ Your turn (no engine — play solo or use Coach!)', '');
+  sfReady = false;
+  newGame(true); // start game without engine
+}
+
+function handleSFMsg(e){
+  const msg = typeof e === 'string' ? e : (e.data || '');
+  if(msg==='uciok'){ SF.postMessage('isready'); return; }
+  if(msg==='readyok'){
+    sfReady=true;
+    $('sfBadge').textContent='STOCKFISH';
+    $('sfBadge').style.background='var(--teal)';
+    newGame(true);
+    return;
+  }
+
+  if(msg.startsWith('info')&&msg.includes('score')&&msg.includes(' pv ')){
+    const dM=msg.match(/depth (\d+)/);
+    const sM=msg.match(/score (cp|mate) (-?\d+)/);
+    const pvM=msg.match(/ pv (.+)/);
+    const mpM=msg.match(/multipv (\d+)/);
+    if(!sM||!pvM) return;
+    if(dM&&+dM[1]<5) return;
+
+    const idx=mpM?+mpM[1]-1:0;
+    const pvUCI=pvM[1].trim().split(' ');
+    let ev;
+    if(sM[1]==='mate'){
+      const n=+sM[2], signed=game.turn()==='w'?n:-n;
+      ev={label:(signed>0?'M':'−M')+Math.abs(n),raw:signed*99999};
+    } else {
+      const v=game.turn()==='w'?+sM[2]:-+sM[2];
+      ev={label:(v/100).toFixed(2),raw:v};
+    }
+    const tmp=new Chess(game.fen()); const san=[];
+    for(const m of pvUCI.slice(0,9)){
+      const r=tmp.move({from:m.slice(0,2),to:m.slice(2,4),promotion:m[4]||'q'});
+      if(!r) break; san.push(r.san);
+    }
+    sfLines[idx]={ev,moves:san,uci:pvUCI[0]};
+    if(idx===0) updateEvalBar(ev);
+    renderLines(sfLines.filter(Boolean));
+  }
+
+  if(msg.startsWith('bestmove')){
+    sfBusy=false; setSFSpin(false);
+    if(sfMessageHandler){
+      const bm=msg.split(' ')[1];
+      const cb=sfMessageHandler; sfMessageHandler=null;
+      cb(bm);
+    }
+  }
+}
+
+// ── SF HELPERS ───────────────────────────────────────────────
+function sfSend(msg){ if(SF) SF.postMessage(msg); }
+
+function triggerAnalysis(){
+  if(!sfReady) return;
+  if(sfBusy) sfSend('stop');
+  sfLines=[]; sfBusy=true; setSFSpin(true); sfMessageHandler=null;
+  const depth=Math.min(getDiff()+9,22);
+  sfSend('setoption name MultiPV value 3');
+  sfSend('position fen '+game.fen());
+  sfSend('go depth '+depth);
+}
+
+function setSFSpin(on){
+  const html=on?'<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>':'';
+  $('sfstatus').innerHTML=html;
+  if($('mSfStatus')) $('mSfStatus').innerHTML=html;
+}
+
+function updateEvalBar(ev){
+  const pct=50+Math.min(40,Math.max(-40,ev.raw/100*3.5));
+  const col=ev.raw>30?'#aaccff':ev.raw<-30?'#ff9999':'var(--text)';
+  [['evalFill','evalScore'],['mEvalFill','mEvalScore']].forEach(([f,s])=>{
+    const fe=$(f),se=$(s);
+    if(fe) fe.style.width=pct+'%';
+    if(se){ se.textContent=ev.label; se.style.color=col; }
+  });
+}
+
+function renderLines(lines){
+  const labels=['Best','2nd','3rd'];
+  const html=lines.length
+    ?lines.map((l,i)=>`<div class="line" onclick="playUCI('${l.uci}')"><div class="ev">${labels[i]||i+1} · ${l.ev.label}</div><div class="mv">${l.moves.join(' ')}</div></div>`).join('')
+    :'<div style="color:var(--muted);font-size:.76rem;padding:4px">Calculating…</div>';
+  $('lines').innerHTML=$('mLines').innerHTML=html;
+}
+
+function playUCI(uci){
+  if(gameOver) return;
+  const m=game.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||'q'});
+  if(!m) return;
+  lastMove={from:m.from,to:m.to}; selected=null; legalDests=[];
+  renderBoard(); updateStatus(); renderMoves(); triggerAnalysis();
+  if(!gameOver&&sfReady) setTimeout(engineMove,250);
+}
+
+// ── ENGINE MOVE ──────────────────────────────────────────────
+function engineMove(){
+  if(gameOver||!sfReady) return;
+  if(sfBusy) sfSend('stop');
+  sfBusy=true; setSFSpin(true);
+  setStatus('Engine thinking…','thinking');
+  sfMessageHandler=function(bm){
+    if(bm&&bm!=='(none)'){
+      const m=game.move({from:bm.slice(0,2),to:bm.slice(2,4),promotion:bm[4]||'q'});
+      if(m){
+        lastMove={from:m.from,to:m.to}; selected=null; legalDests=[];
+        renderBoard(); updateStatus(); renderMoves();
+        triggerAnalysis();
+      }
+    }
+  };
+  sfSend('setoption name MultiPV value 1');
+  sfSend('position fen '+game.fen());
+  sfSend('go depth '+getDiff());
+}
+
+// ── AI COACHING — opens Claude.ai in a new tab with position context ──────────
+function getCoaching(){
+  if(mob()) mobTab(1);
+  const history = game.history();
+  const last    = history.length ? history[history.length-1] : null;
+  const histStr = history.map((m,i)=>i%2===0?`${Math.floor(i/2)+1}.${m}`:m).join(' ')||'none';
+
+  const prompt =
+`I'm a beginner playing chess. Here's my current position:
+FEN: ${game.fen()}
+Moves played: ${histStr}
+${last ? `Last move: ${last}` : 'No moves yet.'}
+
+Please give me 2-3 short friendly sentences of coaching:
+- Was the last move good or a mistake, and why? (use simple language)
+- What's the most important thing I should focus on right now?`;
+
+  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  window.open(url, '_blank');
+
+  const msg = '💬 Opened Claude in a new tab with your position! Come back here to keep playing.';
+  $('coaching').innerHTML = $('mCoaching').innerHTML = msg;
+}
+
+// ── BOARD ────────────────────────────────────────────────────
+const GLYPHS={wP:'♙',wN:'♘',wB:'♗',wR:'♖',wQ:'♕',wK:'♔',bP:'♟',bN:'♞',bB:'♝',bR:'♜',bQ:'♛',bK:'♚'};
+
+function renderBoard(){
+  const el=$('board'); el.innerHTML='';
+  for(let dr=7;dr>=0;dr--){
+    for(let df=0;df<8;df++){
+      const r=flipped?7-dr:dr, f=flipped?7-df:df;
+      const sq=String.fromCharCode(97+f)+(r+1);
+      const piece=game.get(sq), light=(r+f)%2===1;
+      const div=document.createElement('div');
+      div.className='sq '+(light?'light':'dark');
+      if(selected===sq) div.classList.add('sel');
+      if(lastMove&&(sq===lastMove.from||sq===lastMove.to)) div.classList.add('last');
+      if(selected&&legalDests.includes(sq)) div.classList.add(piece?'hintcap':'hint');
+      if(df===(flipped?0:7)){const s=document.createElement('span');s.className='coord rank';s.style.color=light?'#b58863':'#f0d9b5';s.textContent=r+1;div.appendChild(s);}
+      if(dr===(flipped?7:0)){const s=document.createElement('span');s.className='coord file';s.style.color=light?'#b58863':'#f0d9b5';s.textContent=String.fromCharCode(97+f);div.appendChild(s);}
+      if(piece){
+        const sp=document.createElement('span');sp.className='piece';
+        sp.style.color=piece.color==='w'?'#fff':'#1a1a2e';
+        sp.style.textShadow=piece.color==='w'?'0 1px 4px rgba(0,0,0,.85)':'0 1px 2px rgba(255,255,255,.15)';
+        sp.textContent=GLYPHS[piece.color+piece.type.toUpperCase()];div.appendChild(sp);
+      }
+      div.addEventListener('click',()=>handleClick(sq));
+      el.appendChild(div);
+    }
+  }
+}
+
+// ── CLICK ────────────────────────────────────────────────────
+function handleClick(sq){
+  if(gameOver||game.turn()!==playerSide) return;
+  const piece=game.get(sq);
+  if(selected){
+    if(legalDests.includes(sq)){
+      const m=game.move({from:selected,to:sq,promotion:'q'});
+      if(m){
+        lastMove={from:m.from,to:m.to}; selected=null; legalDests=[];
+        renderBoard(); updateStatus(); renderMoves(); triggerAnalysis();
+        if(!gameOver&&sfReady) setTimeout(engineMove,250);
+        else if(!gameOver&&!sfReady) updateStatus();
+        return;
+      }
+    }
+    if(piece&&piece.color===playerSide){selected=sq;legalDests=game.moves({square:sq,verbose:true}).map(m=>m.to);renderBoard();return;}
+    selected=null;legalDests=[];renderBoard();return;
+  }
+  if(piece&&piece.color===playerSide){selected=sq;legalDests=game.moves({square:sq,verbose:true}).map(m=>m.to);renderBoard();}
+}
+
+// ── STATUS ───────────────────────────────────────────────────
+function setStatus(t,cls=''){const el=$('status');el.textContent=t;el.className=cls;}
+function updateStatus(){
+  if(game.in_checkmate()){setStatus((game.turn()==='w'?'Black':'White')+' wins by checkmate! 🏆','over');gameOver=true;}
+  else if(game.in_draw()){setStatus("It's a draw! 🤝",'over');gameOver=true;}
+  else if(game.in_check()){setStatus((game.turn()==='w'?'White':'Black')+' is in check! ⚠️','check');}
+  else{
+    const t=game.turn(),yours=t===playerSide;
+    setStatus((t==='w'?'⬜ ':'⬛ ')+(yours?'Your turn':'Engine thinking…'),yours?'':'thinking');
+  }
+}
+
+// ── MOVES ────────────────────────────────────────────────────
+function renderMoves(){
+  const hist=game.history();let html='';
+  for(let i=0;i<hist.length;i++){
+    if(i%2===0) html+=`<span class="mn">${Math.floor(i/2)+1}.</span>`;
+    html+=`<span class="mv-e${i===hist.length-1?' cur':''}">${hist[i]} </span>`;
+  }
+  ['movelist','mMovelist'].forEach(id=>{const el=$(id);if(el){el.innerHTML=html||'<span style="color:var(--muted)">No moves yet</span>';el.scrollTop=el.scrollHeight;}});
+}
+
+// ── CONTROLS ─────────────────────────────────────────────────
+function newGame(skipSync){
+  game=new Chess();selected=null;legalDests=[];lastMove=null;gameOver=false;
+  sfLines=[];renderLines([]);sfMessageHandler=null;
+  $('coaching').innerHTML=$('mCoaching').innerHTML='Make a move to get coaching!';
+  if(sfBusy){sfSend('stop');sfBusy=false;}
+  if(!skipSync){
+    playerSide=mob()?$('mPlaySide').value:$('playSide').value;
+    syncOpt('playSide','mPlaySide',playerSide);
+  }
+  flipped=playerSide==='b';
+  [['evalFill','evalScore'],['mEvalFill','mEvalScore']].forEach(([f,s])=>{
+    const fe=$(f),se=$(s);if(fe)fe.style.width='50%';if(se){se.textContent='0.00';se.style.color='var(--text)';}
+  });
+  renderBoard();updateStatus();renderMoves();
+  if(sfReady){
+    if(playerSide==='b') setTimeout(engineMove,400);
+    else triggerAnalysis();
+  }
+}
+function flipBoard(){flipped=!flipped;renderBoard();}
+function undoMove(){
+  if(!game.history().length) return;
+  game.undo();
+  if(game.turn()!==playerSide&&game.history().length>0) game.undo();
+  const moves=game.history({verbose:true});
+  lastMove=moves.length?{from:moves[moves.length-1].from,to:moves[moves.length-1].to}:null;
+  selected=null;legalDests=[];gameOver=false;sfMessageHandler=null;
+  renderBoard();updateStatus();renderMoves();triggerAnalysis();
+  $('coaching').innerHTML=$('mCoaching').innerHTML='Position restored — keep going! 💪';
+}
+function mobTab(idx){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+  document.querySelectorAll('.tab-body').forEach((b,i)=>b.classList.toggle('on',i===idx));
+}
+let rTimer;
+window.addEventListener('resize',()=>{clearTimeout(rTimer);rTimer=setTimeout(()=>{applySq();renderBoard();},100);});
+
+// ── INIT ─────────────────────────────────────────────────────
+applySq();
+renderBoard(); // show board immediately, don't wait for SF
+setStatus('Loading engine…');
+
+// Wait for stockfish.js script to define its global, then init
+window.addEventListener('load', function(){
+  try {
+    initSF();
+  } catch(e) {
+    console.error(e);
+    onSFLoadFail();
+  }
+});
+</script>
+</body>
+</html>
