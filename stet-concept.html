@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stet — Say it like you mean it.</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,600,700&f[]=cabinet-grotesk@400,500,800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF8;
+    --teal: #00C2B2;
+    --peach: #F4A97F;
+    --ink: #1A1A1A;
+    --muted: #6B6B6B;
+    --card: #FFFFFF;
+    --border: #E8E8E6;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Cabinet Grotesk', sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(250,250,248,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Clash Display', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--teal);
+    letter-spacing: -0.5px;
+  }
+
+  .nav-tag {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 120px 48px 80px;
+    gap: 80px;
+    position: relative;
+  }
+
+  .hero-left { position: relative; z-index: 1; }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--peach);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.1s ease forwards;
+  }
+
+  .hero-title {
+    font-family: 'Clash Display', sans-serif;
+    font-weight: 700;
+    font-size: clamp(52px, 6vw, 88px);
+    line-height: 1.0;
+    letter-spacing: -2px;
+    color: var(--ink);
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.2s ease forwards;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    color: var(--teal);
+  }
+
+  .hero-title .strike {
+    position: relative;
+    color: var(--muted);
+  }
+
+  .hero-title .strike::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 52%;
+    height: 3px;
+    background: var(--peach);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: strikeThrough 0.5s 1.2s ease forwards;
+  }
+
+  .hero-sub {
+    font-size: 19px;
+    color: var(--muted);
+    max-width: 440px;
+    line-height: 1.65;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.35s ease forwards;
+  }
+
+  .hero-sub strong { color: var(--ink); font-weight: 800; }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--teal);
+    color: #fff;
+    font-family: 'Cabinet Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 16px 32px;
+    border-radius: 100px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.45s ease forwards;
+  }
+
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,194,178,0.25);
+  }
+
+  .hero-cta span { font-size: 20px; }
+
+  /* hero right — mock card */
+  .hero-right {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    animation: fadeUp 0.7s 0.5s ease forwards;
+  }
+
+  .mock-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mock-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--teal), var(--peach));
+  }
+
+  .mock-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .mock-raw {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 16px;
+    background: #F5F5F3;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  .mock-arrow {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: var(--teal);
+  }
+
+  .mock-reframed {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(0,194,178,0.06), rgba(244,169,127,0.06));
+    border-radius: 12px;
+    border-left: 3px solid var(--teal);
+    margin-bottom: 20px;
+  }
+
+  .mock-streak {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .mock-streak strong {
+    color: var(--peach);
+    font-size: 18px;
+  }
+
+  .mock-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .mock-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 100px;
+    font-family: 'Cabinet Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    text-align: center;
+    cursor: default;
+  }
+
+  .mock-btn-primary { background: var(--teal); color: #fff; }
+  .mock-btn-secondary { background: var(--peach); color: #fff; }
+
+  /* floating decorations */
+  .deco {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .deco-1 {
+    width: 400px; height: 400px;
+    background: rgba(0,194,178,0.08);
+    top: -100px; right: -100px;
+  }
+
+  .deco-2 {
+    width: 300px; height: 300px;
+    background: rgba(244,169,127,0.1);
+    bottom: 0; left: -80px;
+  }
+
+  /* ── PROBLEM ── */
+  .problem {
+    padding: 100px 48px;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 20px;
+    opacity: 0;
+  }
+
+  .section-title {
+    font-family: 'Clash Display', sans-serif;
+    font-weight: 700;
+    font-size: clamp(36px, 4vw, 58px);
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    opacity: 0;
+  }
+
+  .section-body {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 620px;
+    margin: 0 auto 60px;
+    opacity: 0;
+  }
+
+  .quotes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    text-align: left;
+  }
+
+  .quote-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+    position: relative;
+    opacity: 0;
+  }
+
+  .quote-card::before {
+    content: '"';
+    font-family: 'Clash Display', sans-serif;
+    font-size: 80px;
+    line-height: 1;
+    color: var(--border);
+    position: absolute;
+    top: 10px; left: 20px;
+  }
+
+  .quote-text {
+    font-size: 15px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.65;
+    padding-top: 30px;
+    margin-bottom: 16px;
+  }
+
+  .quote-stet {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--teal);
+    padding: 10px 16px;
+    background: rgba(0,194,178,0.07);
+    border-radius: 10px;
+  }
+
+  /* ── FEATURES ── */
+  .features {
+    padding: 100px 48px;
+    background: var(--ink);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .features::before {
+    content: 'stet.';
+    font-family: 'Clash Display', sans-serif;
+    font-size: 300px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.03);
+    position: absolute;
+    bottom: -60px;
+    right: -20px;
+    line-height: 1;
+    pointer-events: none;
+    letter-spacing: -10px;
+  }
+
+  .features-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .features .section-label { color: var(--peach); }
+  .features .section-title { color: #fff; }
+  .features .section-body { color: rgba(255,255,255,0.5); }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 60px;
+  }
+
+  .feature-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 32px;
+    opacity: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .feature-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(0,194,178,0.3);
+  }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .feature-icon.teal { background: rgba(0,194,178,0.15); }
+  .feature-icon.peach { background: rgba(244,169,127,0.15); }
+
+  .feature-name {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+    letter-spacing: -0.3px;
+  }
+
+  .feature-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.65;
+  }
+
+  /* ── FLOW ── */
+  .flow {
+    padding: 100px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .flow-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 60px;
+    position: relative;
+  }
+
+  .flow-steps::before {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: 60px; right: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--teal), var(--peach));
+  }
+
+  .flow-step {
+    text-align: center;
+    padding: 0 20px;
+    opacity: 0;
+  }
+
+  .step-num {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-family: 'Clash Display', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-num.t { background: var(--teal); color: #fff; }
+  .step-num.p { background: var(--peach); color: #fff; }
+
+  .step-title {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .step-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── BOTTOM CTA ── */
+  .bottom-cta {
+    padding: 120px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bottom-cta::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,194,178,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .bottom-cta .section-title { opacity: 1; }
+
+  .bottom-cta-sub {
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 48px;
+  }
+
+  .built-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 40px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+  }
+
+  .built-tag strong { color: var(--ink); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 32px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  footer .nav-logo { font-size: 18px; }
+
+  footer p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes strikeThrough {
+    to { transform: scaleX(1); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+
+</style>
+</head>
+<body>
+
+<div class="deco deco-1"></div>
+<div class="deco deco-2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">stet.</div>
+  <div class="nav-tag">Building in public — Women's Day 2025</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">✦ Built for women who ship things</div>
+    <h1 class="hero-title">
+      Stop<br>
+      <span class="strike">shrinking</span><br>
+      your work.<br>
+      <em>Own it.</em>
+    </h1>
+    <p class="hero-sub">
+      You did the work. <strong>Stet</strong> makes sure you say so — clearly, confidently, without the apologies.
+    </p>
+    <a href="#features" class="hero-cta">
+      See how it works <span>→</span>
+    </a>
+  </div>
+
+  <div class="hero-right">
+    <div class="mock-card">
+      <div class="mock-label">What you typed</div>
+      <div class="mock-raw">
+        "I kind of helped fix a bug that was causing some issues with the checkout flow, nothing major really"
+      </div>
+      <div class="mock-arrow">↓</div>
+      <div class="mock-label">What Stet heard</div>
+      <div class="mock-reframed">
+        Diagnosed and resolved a critical checkout flow bug — restoring purchase functionality and unblocking revenue.
+      </div>
+      <div class="mock-streak">
+        <strong>🔥 12</strong> day streak
+      </div>
+      <div class="mock-actions">
+        <div class="mock-btn mock-btn-primary">Copy</div>
+        <div class="mock-btn mock-btn-secondary">Generate share card</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="section-label reveal">The problem</div>
+  <h2 class="section-title reveal reveal-delay-1">
+    You minimize.<br>Every single day.
+  </h2>
+  <p class="section-body reveal reveal-delay-2">
+    Women are trained to hedge, qualify, and apologize for their own achievements. It's not a confidence problem. It's a habit. Stet breaks it.
+  </p>
+  <div class="quotes-grid">
+    <div class="quote-card reveal reveal-delay-1">
+      <div class="quote-text">"I just helped out a little with the launch strategy, the team did most of the work."</div>
+      <div class="quote-stet">→ Led go-to-market strategy for product launch</div>
+    </div>
+    <div class="quote-card reveal reveal-delay-2">
+      <div class="quote-text">"I kind of built a small app, it's nothing fancy, still has bugs probably."</div>
+      <div class="quote-stet">→ Shipped a full-stack app from zero to production</div>
+    </div>
+    <div class="quote-card reveal reveal-delay-3">
+      <div class="quote-text">"I guess I onboarded some new clients this month, nothing too special."</div>
+      <div class="quote-stet">→ Closed and onboarded 4 new clients in 30 days</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="section-label reveal">What Stet does</div>
+    <h2 class="section-title reveal reveal-delay-1">Everything you need.<br>Nothing you don't.</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon teal">✍️</div>
+        <div class="feature-name">Daily reframe</div>
+        <div class="feature-desc">Log one achievement a day — raw, unfiltered. AI rewrites it in your voice, without the hedge. LinkedIn post, newsletter, Instagram caption, or just for you.</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon peach">🔥</div>
+        <div class="feature-name">Streak system</div>
+        <div class="feature-desc">Show up daily and watch your streak grow. The habit is the point. Consistency compounds — so does confidence.</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon teal">🖼️</div>
+        <div class="feature-name">Share cards</div>
+        <div class="feature-desc">Generate a beautiful visual card with your reframed achievement, your photo, and your words. Sized for Instagram, LinkedIn, or X. Download and post.</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon peach">📊</div>
+        <div class="feature-name">Weekly dashboard</div>
+        <div class="feature-desc">See your week at a glance. Then generate a weekly insight — a short paragraph reflecting back what kind of week you actually had.</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon teal">🧠</div>
+        <div class="feature-name">Personalized AI</div>
+        <div class="feature-desc">Stet knows your work type, your voice, your audience — and the one thing you never take credit for. Every reframe is calibrated to you.</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon peach">🗂️</div>
+        <div class="feature-name">Achievement archive</div>
+        <div class="feature-desc">Every entry saved. Your full history of wins — raw and reframed — in one place. Performance reviews, proposals, bio updates: it's all there.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOW -->
+<section class="flow">
+  <div style="text-align:center">
+    <div class="section-label reveal">How it works</div>
+    <h2 class="section-title reveal reveal-delay-1">Four steps.<br>Every day.</h2>
+  </div>
+  <div class="flow-steps">
+    <div class="flow-step reveal reveal-delay-1">
+      <div class="step-num t">1</div>
+      <div class="step-title">Log it raw</div>
+      <div class="step-desc">Type what you did, however it comes out. No filter needed.</div>
+    </div>
+    <div class="flow-step reveal reveal-delay-2">
+      <div class="step-num p">2</div>
+      <div class="step-title">Stet it</div>
+      <div class="step-desc">AI rewrites it in your voice — confident, direct, unshrunk.</div>
+    </div>
+    <div class="flow-step reveal reveal-delay-3">
+      <div class="step-num t">3</div>
+      <div class="step-title">Share it</div>
+      <div class="step-desc">Copy the text or generate a beautiful card ready to post.</div>
+    </div>
+    <div class="flow-step reveal reveal-delay-4">
+      <div class="step-num p">4</div>
+      <div class="step-title">Keep the streak</div>
+      <div class="step-desc">Come back tomorrow. The habit is what changes everything.</div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section class="bottom-cta">
+  <h2 class="section-title" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(40px,5vw,72px);letter-spacing:-2px;margin-bottom:20px;">
+    What did you do today?
+  </h2>
+  <p class="bottom-cta-sub">Say it like you mean it.</p>
+  <div class="built-tag">
+    🛠 Built live on <strong>Women's Day 2025</strong> with Lovable + Supabase + Claude
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="nav-logo">stet.</div>
+  <p>Built by <strong>Tuğçe Köseoğlu</strong> · @72perseids · Don't optimise. Just ship.</p>
+</footer>
+
+<script>
+  // Intersection observer for scroll reveals
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Typewriter effect on mock raw text
+  const rawText = '"I kind of helped fix a bug that was causing some issues with the checkout flow, nothing major really"';
+  const reframedText = 'Diagnosed and resolved a critical checkout flow bug — restoring purchase functionality and unblocking revenue.';
+</script>
+
+</body>
+</html>
